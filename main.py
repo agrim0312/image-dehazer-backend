@@ -11,6 +11,8 @@ import cv2
 from tqdm import tqdm
 from torch.autograd import Variable
 
+import matplotlib.pyplot as plt
+
 app = FastAPI()
 
 origins = [
@@ -111,10 +113,10 @@ class Decoder(nn.Module):
 async def root():
     return {"message": "Hello World"}
 
-#comiting the changes
-
 @app.post("/api/image-upload")
 async def dehaze_image(image: UploadFile = File(...)):
+    encoder = Encoder()
+    decoder = Decoder()
     try:
         file_path = os.path.join(UPLOAD_DIRECTORY, image.filename)
         with open(file_path, "wb") as buffer:
@@ -159,8 +161,8 @@ async def dehaze_image(image: UploadFile = File(...)):
             raise Exception(400, str(e))
         
         # Run the model on the input image
-        encoder_op = encoder(hazy_image)
-        output = decoder(encoder_op)
+        # encoder_op = encoder(hazy_image)
+        # output = decoder(encoder_op)
 
         # print("OUTPUT-----------------<><><><><><><>----------------",output)
 
@@ -195,6 +197,13 @@ async def dehaze_image(image: UploadFile = File(...)):
         # Plot the dehazed image
         rotated_image = np.rot90(X_dehazed.squeeze(), k=-1) 
         mirror_image_horizontal = np.flip(rotated_image, axis=1)
+
+        plt.subplot(133)
+        plt.title('Dehazed Image')
+        plt.imshow(mirror_image_horizontal)  # Squeeze to remove batch dimension if present
+        plt.axis('off')
+
+        plt.show()
         # Return the output image as a response stream
         # Convert the image array to bytes
         # Save the image to a temporary file
@@ -210,4 +219,4 @@ async def dehaze_image(image: UploadFile = File(...)):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="127.0.0.1", port=8000)
