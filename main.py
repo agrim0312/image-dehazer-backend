@@ -160,11 +160,6 @@ async def dehaze_image(image: UploadFile = File(...)):
         except Exception as e:
             raise Exception(400, str(e))
         
-        # Run the model on the input image
-        # encoder_op = encoder(hazy_image)
-        # output = decoder(encoder_op)
-
-        # print("OUTPUT-----------------<><><><><><><>----------------",output)
 
         train_hazy_loader = torch.utils.data.DataLoader(dataset=input_image, batch_size=1, shuffle=False)
 
@@ -198,12 +193,7 @@ async def dehaze_image(image: UploadFile = File(...)):
         rotated_image = np.rot90(X_dehazed.squeeze(), k=-1) 
         mirror_image_horizontal = np.flip(rotated_image, axis=1)
 
-        plt.subplot(133)
-        plt.title('Dehazed Image')
-        plt.imshow(mirror_image_horizontal)  # Squeeze to remove batch dimension if present
-        plt.axis('off')
-
-        plt.show()
+        mirror_image_horizontal = (mirror_image_horizontal * 255).clip(0, 255).astype(np.uint8)
         # Return the output image as a response stream
         # Convert the image array to bytes
         # Save the image to a temporary file
