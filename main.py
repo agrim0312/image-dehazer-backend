@@ -28,14 +28,6 @@ app.add_middleware(
     allow_headers=["*"],
 
 )
-
-# Define the directory to store the uploaded images
-UPLOAD_DIRECTORY = "uploads"
-
-# Create the uploads directory if it doesn't exist
-if not os.path.exists(UPLOAD_DIRECTORY):
-    os.makedirs(UPLOAD_DIRECTORY)
-
 import torch.nn as nn
 
 class Encoder(nn.Module):
@@ -118,12 +110,10 @@ async def dehaze_image(image: UploadFile = File(...)):
     encoder = Encoder()
     decoder = Decoder()
     try:
-        file_path = os.path.join(UPLOAD_DIRECTORY, image.filename)
-        with open(file_path, "wb") as buffer:
-            buffer.write(await image.read())
+        image_bytes = await image.read()
 
         # Load the image using PIL
-        uploaded_image = Image.open(file_path)
+        uploaded_image = Image.open(io.BytesIO(image_bytes))
             
         image_np = np.array(uploaded_image)
 
@@ -141,7 +131,6 @@ async def dehaze_image(image: UploadFile = File(...)):
         X_orig_T = torch.transpose(X_orig, 1, 3)
 
         input_image=X_orig_T.reshape(-1,1,256,256)
-        print("Size of X_orig_T:", input_image.shape)
 
         hazy_loader = torch.utils.data.DataLoader(dataset=input_image, batch_size=1)
 
@@ -194,12 +183,12 @@ async def dehaze_image(image: UploadFile = File(...)):
         # Return the output image as a response stream
         # Convert the image array to bytes
         # Save the image to a temporary file
-        print("mirror_image_horizontal shape:---------><><><><>--------------", mirror_image_horizontal.shape)
-        temp_file_path = "uploads/temp_one_image.jpg"
-        cv2.imwrite(temp_file_path, mirror_image_horizontal)
+        output_bytes = io.BytesIO()
+        Image.fromarray(mirror_image_horizontal).save(output_bytes, format='JPEG')
+        output_bytes.seek(0)
 
         # Return the image file as a response
-        return FileResponse(temp_file_path, media_type="image/jpeg")
+        return StreamingResponse(output_bytes, media_type="image/jpeg")
     
     except Exception as e:
         raise Exception(400, str(e))
@@ -207,4 +196,4 @@ async def dehaze_image(image: UploadFile = File(...)):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8000)
