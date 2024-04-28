@@ -153,9 +153,8 @@ async def dehaze_image(image: UploadFile = File(...)):
 
         #load model
         try:
-            model = torch.load(r'C:\Users\agrim\OneDrive\Desktop\minor-project\backend1\dehaze_autoencoder.pkl', map_location=torch.device('cpu'))
+            model = torch.load(r'C:\Users\agrim\OneDrive\Desktop\minor-project\backend1\dehaze_model.pkl', map_location=torch.device('cpu'))
             encoder = model[0]
-            print("Encoder------------<><><><><>-----------",encoder)
             decoder = model[1]
         except Exception as e:
             raise Exception(400, str(e))
@@ -187,8 +186,6 @@ async def dehaze_image(image: UploadFile = File(...)):
         X_dehazed = X_dehazed.view(-1, 3, 256, 256)  # Convert to 3 channels
         X_dehazed = X_dehazed.permute(0, 2, 3, 1)     # Permute dimensions to match expected format (batch_size, height, width, channels)
 
-        print("X_DEHAZE--------------><><><><><><><>-------------------------",X_dehazed) 
-
         # Plot the dehazed image
         rotated_image = np.rot90(X_dehazed.squeeze(), k=-1) 
         mirror_image_horizontal = np.flip(rotated_image, axis=1)
@@ -197,6 +194,7 @@ async def dehaze_image(image: UploadFile = File(...)):
         # Return the output image as a response stream
         # Convert the image array to bytes
         # Save the image to a temporary file
+        print("mirror_image_horizontal shape:---------><><><><>--------------", mirror_image_horizontal.shape)
         temp_file_path = "uploads/temp_one_image.jpg"
         cv2.imwrite(temp_file_path, mirror_image_horizontal)
 
