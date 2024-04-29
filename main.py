@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 
 app = FastAPI()
 
-PORT = os.getenv("PORT")
+PORT = os.environ.get("PORT",default=8000)
 
 origins = [
     "*"
@@ -183,7 +183,6 @@ async def dehaze_image(image: UploadFile = File(...)):
         mirror_image_horizontal = (mirror_image_horizontal * 255).clip(0, 255).astype(np.uint8)
         # Return the output image as a response stream
         # Convert the image array to bytes
-        # Save the image to a temporary file
         output_bytes = io.BytesIO()
         Image.fromarray(mirror_image_horizontal).save(output_bytes, format='JPEG')
         output_bytes.seek(0)
